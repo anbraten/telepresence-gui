@@ -133,7 +133,6 @@ document.addEventListener('alpine:init', () => {
       this.modal.submitting = true;
       const payload = {
         workload:   w.name,
-        namespace:  w.namespace || this.currentNs || 'default',
         localPort:  this.modal.localPort,
         remotePort: this.modal.remotePort,
         envFile:    this.modal.envFile,
