@@ -28,7 +28,7 @@ type ConnectionStatus struct {
 type Workload struct {
 	Name        string           `json:"name"`
 	Namespace   string           `json:"namespace"`
-	Kind        string           `json:"kind"`
+	Type        string           `json:"type"`
 	Intercepted bool             `json:"intercepted"`
 	Intercept   *ActiveIntercept `json:"intercept,omitempty"`
 }
@@ -176,16 +176,17 @@ func parseStatusText(text string) ConnectionStatus {
 
 // Raw JSON shape from `telepresence list --output json`
 type tpListJSON struct {
-	Workloads []struct {
-		Name      string `json:"name"`
-		Namespace string `json:"namespace"`
-		Kind      string `json:"kind"`
-		Intercept *struct {
+	Stdout []struct {
+		UID                  string `json:"uid"`
+		Name                 string `json:"name"`
+		Namespace            string `json:"namespace"`
+		WorkloadResourceType string `json:"workload_resource_type"`
+		Intercept            *struct {
 			Client     string `json:"client"`
 			LocalPort  int    `json:"localPort"`
 			RemotePort int    `json:"servicePortIdentifier"`
 		} `json:"intercept"`
-	} `json:"workloads"`
+	} `json:"stdout"`
 }
 
 func ListWorkloads(ctx context.Context, namespace string) ([]Workload, error) {
@@ -205,58 +206,32 @@ func ListWorkloads(ctx context.Context, namespace string) ([]Workload, error) {
 		}
 	}
 
-	// Try JSON first
 	var raw tpListJSON
-	if jsonErr := json.Unmarshal([]byte(stdout), &raw); jsonErr == nil {
-		workloads := make([]Workload, 0, len(raw.Workloads))
-		for _, w := range raw.Workloads {
-			wl := Workload{
-				Name:        w.Name,
-				Namespace:   w.Namespace,
-				Kind:        w.Kind,
-				Intercepted: w.Intercept != nil,
-			}
-			if w.Intercept != nil {
-				wl.Intercept = &ActiveIntercept{
-					Name:       w.Name,
-					Client:     w.Intercept.Client,
-					LocalPort:  w.Intercept.LocalPort,
-					RemotePort: w.Intercept.RemotePort,
-					Namespace:  w.Namespace,
-				}
-			}
-			workloads = append(workloads, wl)
-		}
-		return workloads, nil
+	jsonErr := json.Unmarshal([]byte(stdout), &raw)
+	if jsonErr != nil {
+		return nil, fmt.Errorf("failed to parse telepresence list output: %w", jsonErr)
 	}
 
-	// Fallback: parse text output
-	return parseListText(stdout, namespace), nil
-}
-
-func parseListText(text, namespace string) []Workload {
-	var workloads []Workload
-	for _, line := range strings.Split(text, "\n") {
-		line = strings.TrimSpace(line)
-		if line == "" || strings.HasPrefix(line, "(") {
-			continue
-		}
-		// Format: "  name : status"
-		parts := strings.SplitN(line, ":", 2)
-		if len(parts) < 2 {
-			continue
-		}
-		name := strings.TrimSpace(parts[0])
-		status := strings.ToLower(strings.TrimSpace(parts[1]))
+	workloads := make([]Workload, 0, len(raw.Stdout))
+	for _, w := range raw.Stdout {
 		wl := Workload{
-			Name:        name,
-			Namespace:   namespace,
-			Kind:        "Deployment",
-			Intercepted: strings.Contains(status, "intercepted"),
+			Name:        w.Name,
+			Namespace:   w.Namespace,
+			Type:        w.WorkloadResourceType,
+			Intercepted: w.Intercept != nil,
+		}
+		if w.Intercept != nil {
+			wl.Intercept = &ActiveIntercept{
+				Name:       w.Name,
+				Client:     w.Intercept.Client,
+				LocalPort:  w.Intercept.LocalPort,
+				RemotePort: w.Intercept.RemotePort,
+				Namespace:  w.Namespace,
+			}
 		}
 		workloads = append(workloads, wl)
 	}
-	return workloads
+	return workloads, nil
 }
 
 // ---------------------------------------------------------------------------
