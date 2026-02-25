@@ -14,6 +14,7 @@ document.addEventListener('alpine:init', () => {
     connectingNs: '',
     nsFilter:     '',
     workloadFilter: '',
+    stoppingSet:  {},  // { [workloadName]: true } while leave is in-flight
     quitting:   false,
     sseRetry:   1000,
 
@@ -133,6 +134,7 @@ document.addEventListener('alpine:init', () => {
       this.modal.submitting = true;
       const payload = {
         workload:   w.name,
+        namespace:  w.namespace || this.currentNs || 'default',
         localPort:  this.modal.localPort,
         remotePort: this.modal.remotePort,
         envFile:    this.modal.envFile,
@@ -155,6 +157,7 @@ document.addEventListener('alpine:init', () => {
 
     // ── API ───────────────────────────────────────────────────────
     async apiLeave(name) {
+      this.stoppingSet = { ...this.stoppingSet, [name]: true };
       try {
         const r    = await fetch('/api/leave', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name}) });
         const data = await r.json();
@@ -164,6 +167,10 @@ document.addEventListener('alpine:init', () => {
       } catch(e) {
         this.addToast(e.message, 'err');
         this.addLog(`✗ leave error: ${e.message}`, 'err');
+      } finally {
+        const s = { ...this.stoppingSet };
+        delete s[name];
+        this.stoppingSet = s;
       }
     },
 

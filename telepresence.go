@@ -36,11 +36,11 @@ type ConnectionStatus struct {
 }
 
 type Workload struct {
-	Name        string           `json:"name"`
-	Namespace   string           `json:"namespace"`
-	Type        string           `json:"type"`
-	Intercepted bool             `json:"intercepted"`
-	Intercept   *ActiveIntercept `json:"intercept,omitempty"`
+	Name        string            `json:"name"`
+	Namespace   string            `json:"namespace"`
+	Type        string            `json:"type"`
+	Intercepted bool              `json:"intercepted"`
+	Intercepts  []ActiveIntercept `json:"intercepts,omitempty"`
 }
 
 type ActiveIntercept struct {
@@ -196,7 +196,7 @@ type tpListJSON struct {
 		Name                 string `json:"name"`
 		Namespace            string `json:"namespace"`
 		WorkloadResourceType string `json:"workload_resource_type"`
-		Intercept            *struct {
+		InterceptInfo        []struct {
 			Spec struct {
 				Name            string `json:"name"`
 				Client          string `json:"client"`
@@ -252,22 +252,21 @@ func ListWorkloads(ctx context.Context, namespace string) ([]Workload, error) {
 			Name:        w.Name,
 			Namespace:   w.Namespace,
 			Type:        w.WorkloadResourceType,
-			Intercepted: w.Intercept != nil,
+			Intercepted: len(w.InterceptInfo) > 0,
 		}
-		if w.Intercept != nil {
-			wl.Intercept = &ActiveIntercept{
-				Name:          w.Name,
-				Client:        w.Intercept.Client,
-				LocalPort:     w.Intercept.LocalPort,
-				RemotePort:    w.Intercept.RemotePort,
-				Namespace:     w.Namespace,
-				TargetHost:    w.Intercept.Spec.TargetHost,
-				ContainerPort: w.Intercept.Spec.ContainerPort,
-				Protocol:      w.Intercept.Spec.Protocol,
-				Mechanism:     w.Intercept.Spec.Mechanism,
-				Replace:       w.Intercept.Spec.Replace,
-				Wiretap:       w.Intercept.Spec.Wiretap,
-			}
+		for _, info := range w.InterceptInfo {
+			wl.Intercepts = append(wl.Intercepts, ActiveIntercept{
+				Name:          info.Spec.Name,
+				Client:        info.Client,
+				LocalPort:     info.LocalPort,
+				RemotePort:    info.RemotePort,
+				TargetHost:    info.Spec.TargetHost,
+				ContainerPort: info.Spec.ContainerPort,
+				Protocol:      info.Spec.Protocol,
+				Mechanism:     info.Spec.Mechanism,
+				Replace:       info.Spec.Replace,
+				Wiretap:       info.Spec.Wiretap,
+			})
 		}
 		workloads = append(workloads, wl)
 	}

@@ -4,41 +4,42 @@ body {
   background: #0a0a0a;
   color: #e5e5e5;
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  font-size: 1rem;
   letter-spacing: -0.01em;
   -webkit-font-smoothing: antialiased;
 }
 
 /* ── Pills ──────────────────────────────────────────────────────────── */
-.pill { display:inline-flex; align-items:center; gap:6px; padding:3px 10px; border-radius:9999px; font-size:.72rem; font-weight:600; letter-spacing:.04em; text-transform:uppercase; }
+.pill { display:inline-flex; align-items:center; gap:6px; padding:4px 12px; border-radius:9999px; font-size:.78rem; font-weight:600; letter-spacing:.04em; text-transform:uppercase; }
 .pill-green  { background:#14532d33; color:#4ade80; border:1px solid #16a34a44; }
 .pill-red    { background:#7f1d1d33; color:#f87171; border:1px solid #dc262644; }
 .pill-yellow { background:#78350f33; color:#fbbf24; border:1px solid #d9770644; }
 .pill-blue   { background:#1c2d4a33; color:#7dd3fc; border:1px solid #0369a144; }
 
 /* ── Status dots ────────────────────────────────────────────────────── */
-.dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
-.dot-green  { background:#4ade80; box-shadow:0 0 5px #4ade8088; }
-.dot-red    { background:#f87171; box-shadow:0 0 5px #f8717188; }
-.dot-yellow { background:#fbbf24; box-shadow:0 0 5px #fbbf2488; }
+.dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.dot-green  { background:#4ade80; box-shadow:0 0 6px #4ade8099; }
+.dot-red    { background:#f87171; box-shadow:0 0 6px #f8717199; }
+.dot-yellow { background:#fbbf24; box-shadow:0 0 6px #fbbf2499; }
 
 /* ── Cards ──────────────────────────────────────────────────────────── */
 .card {
   background: #111111;
   border: 1px solid #222222;
-  border-radius: .75rem;
-  padding: 1rem 1.25rem;
+  border-radius: .875rem;
+  padding: 1.5rem 1.75rem;
   transition: border-color .15s;
 }
-.card:hover { border-color: #333333; }
+.card:hover { border-color: #2e2e2e; }
 
 /* ── Buttons ────────────────────────────────────────────────────────── */
 .btn {
   display: inline-flex;
   align-items: center;
-  gap: .35rem;
-  padding: .4rem .9rem;
-  border-radius: .5rem;
-  font-size: .8rem;
+  gap: .45rem;
+  padding: .55rem 1.15rem;
+  border-radius: .6rem;
+  font-size: .875rem;
   font-weight: 600;
   cursor: pointer;
   transition: all .15s;
@@ -61,23 +62,23 @@ input, select {
   background: #0a0a0a;
   border: 1px solid #2a2a2a;
   color: #e5e5e5;
-  border-radius: .5rem;
-  padding: .45rem .7rem;
-  font-size: .85rem;
+  border-radius: .6rem;
+  padding: .65rem 1rem;
+  font-size: .95rem;
   outline: none;
   width: 100%;
   transition: border-color .15s, box-shadow .15s;
 }
 input:focus, select:focus {
   border-color: #0284c7;
-  box-shadow: 0 0 0 2px #0284c718;
+  box-shadow: 0 0 0 3px #0284c720;
 }
-label { font-size:.78rem; color:#737373; display:block; margin-bottom:.3rem; font-weight:500; }
+label { font-size:.875rem; color:#737373; display:block; margin-bottom:.4rem; font-weight:500; }
 
 /* ── Tabs ───────────────────────────────────────────────────────────── */
 .tab {
-  padding: .5rem 1rem;
-  font-size: .82rem;
+  padding: .7rem 1.5rem;
+  font-size: .9rem;
   font-weight: 600;
   color: #525252;
   border-bottom: 2px solid transparent;
@@ -94,31 +95,31 @@ label { font-size:.78rem; color:#737373; display:block; margin-bottom:.3rem; fon
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: #000000aa;
+  background: #000000bb;
   z-index: 50;
   display: flex;
   align-items: center;
   justify-content: center;
-  backdrop-filter: blur(2px);
+  backdrop-filter: blur(3px);
 }
 .modal {
   background: #111111;
   border: 1px solid #222222;
-  border-radius: .875rem;
-  padding: 1.75rem;
+  border-radius: 1rem;
+  padding: 2.25rem;
   width: 100%;
-  max-width: 480px;
-  box-shadow: 0 32px 64px #00000099, 0 0 0 1px #ffffff08;
+  max-width: 540px;
+  box-shadow: 0 40px 80px #00000099, 0 0 0 1px #ffffff08;
 }
 
 /* ── Log ────────────────────────────────────────────────────────────── */
 .log-line {
   font-family: 'JetBrains Mono', ui-monospace, monospace;
-  font-size: .72rem;
+  font-size: .8rem;
   color: #525252;
-  padding: .15rem 0;
+  padding: .2rem 0;
   border-bottom: 1px solid #161616;
-  line-height: 1.6;
+  line-height: 1.65;
 }
 .log-line.err { color: #f87171; }
 .log-line.ok  { color: #4ade80; }
@@ -126,9 +127,9 @@ label { font-size:.78rem; color:#737373; display:block; margin-bottom:.3rem; fon
 /* ── Spinner ────────────────────────────────────────────────────────── */
 .spinner {
   display: inline-block;
-  width: 14px;
-  height: 14px;
-  border: 2px solid #2a2a2a;
+  width: 16px;
+  height: 16px;
+  border: 2.5px solid #2a2a2a;
   border-top-color: #38bdf8;
   border-radius: 50%;
   animation: spin .7s linear infinite;
@@ -136,7 +137,7 @@ label { font-size:.78rem; color:#737373; display:block; margin-bottom:.3rem; fon
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* ── Scrollbar ──────────────────────────────────────────────────────── */
-::-webkit-scrollbar      { width: 5px; height: 5px; }
+::-webkit-scrollbar      { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #3a3a3a; }
+::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #3f3f3f; }
