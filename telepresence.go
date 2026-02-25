@@ -59,7 +59,6 @@ type ActiveIntercept struct {
 
 type InterceptRequest struct {
 	Workload   string `json:"workload"`
-	Namespace  string `json:"namespace"`
 	LocalPort  string `json:"localPort"`
 	RemotePort string `json:"remotePort"`
 	EnvFile    string `json:"envFile"`
@@ -287,7 +286,7 @@ func StartIntercept(ctx context.Context, req InterceptRequest) error {
 
 	args := []string{
 		"intercept", req.Workload,
-		"--namespace", req.Namespace,
+		"--detailed-output",
 		"--output", "json",
 	}
 	if req.LocalPort != "" || req.RemotePort != "" {
