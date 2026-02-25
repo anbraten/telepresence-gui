@@ -1,559 +1,307 @@
 <!DOCTYPE html>
 <html lang="en" class="h-full">
+
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>tp-gui · Telepresence</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<script>
-  tailwind.config = {
-    darkMode: 'class',
-    theme: {
-      extend: {
-        colors: {
-          tp: { 50:'#f0f9ff', 500:'#0ea5e9', 600:'#0284c7', 700:'#0369a1' },
-          ok:  '#22c55e',
-          warn:'#f59e0b',
-          err: '#ef4444',
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Telepresence</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            tp: { 50: '#f0f9ff', 500: '#0ea5e9', 600: '#0284c7', 700: '#0369a1' },
+            ok: '#22c55e',
+            warn: '#f59e0b',
+            err: '#ef4444',
+          }
         }
       }
     }
-  }
-</script>
-<style>
-  * { box-sizing: border-box; }
-  body { background: #0f172a; color: #e2e8f0; font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
-
-  .pill { display:inline-flex; align-items:center; gap:6px; padding:3px 10px; border-radius:9999px; font-size:.75rem; font-weight:600; letter-spacing:.03em; }
-  .pill-green  { background:#14532d44; color:#4ade80; border:1px solid #16a34a55; }
-  .pill-red    { background:#7f1d1d44; color:#f87171; border:1px solid #dc262655; }
-  .pill-yellow { background:#78350f44; color:#fbbf24; border:1px solid #d9770655; }
-  .pill-blue   { background:#1e3a5f44; color:#60a5fa; border:1px solid #2563eb55; }
-
-  .dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
-  .dot-green  { background:#4ade80; box-shadow:0 0 6px #4ade80; }
-  .dot-red    { background:#f87171; box-shadow:0 0 6px #f87171; }
-  .dot-yellow { background:#fbbf24; box-shadow:0 0 6px #fbbf24; }
-
-  .card { background:#1e293b; border:1px solid #334155; border-radius:.75rem; padding:1rem 1.25rem; }
-  .card:hover { border-color:#475569; }
-
-  .btn { display:inline-flex; align-items:center; gap:.35rem; padding:.4rem .9rem; border-radius:.5rem; font-size:.8rem; font-weight:600; cursor:pointer; transition:all .15s; border:none; outline:none; }
-  .btn:disabled { opacity:.4; cursor:not-allowed; }
-  .btn-primary { background:#0284c7; color:#fff; }
-  .btn-primary:hover:not(:disabled) { background:#0369a1; }
-  .btn-danger  { background:#dc2626; color:#fff; }
-  .btn-danger:hover:not(:disabled)  { background:#b91c1c; }
-  .btn-ghost   { background:transparent; color:#94a3b8; border:1px solid #334155; }
-  .btn-ghost:hover:not(:disabled)   { background:#1e293b; color:#e2e8f0; }
-  .btn-green   { background:#16a34a; color:#fff; }
-  .btn-green:hover:not(:disabled)   { background:#15803d; }
-
-  input, select { background:#0f172a; border:1px solid #334155; color:#e2e8f0; border-radius:.5rem; padding:.45rem .7rem; font-size:.85rem; outline:none; width:100%; }
-  input:focus, select:focus { border-color:#0284c7; box-shadow:0 0 0 2px #0284c720; }
-  label { font-size:.78rem; color:#94a3b8; display:block; margin-bottom:.25rem; }
-
-  .tab { padding:.5rem 1rem; font-size:.85rem; font-weight:600; color:#64748b; border-bottom:2px solid transparent; cursor:pointer; transition:all .15s; white-space:nowrap; }
-  .tab.active { color:#38bdf8; border-color:#38bdf8; }
-  .tab:hover:not(.active) { color:#94a3b8; }
-
-  .modal-backdrop { display:none; position:fixed; inset:0; background:#00000088; z-index:50; align-items:center; justify-content:center; }
-  .modal-backdrop.open { display:flex; }
-  .modal { background:#1e293b; border:1px solid #334155; border-radius:1rem; padding:1.75rem; width:100%; max-width:480px; box-shadow:0 25px 50px #00000088; }
-
-  @keyframes pulse-in { from { opacity:0; transform:scale(.97); } to { opacity:1; transform:scale(1); } }
-  .modal { animation:pulse-in .15s ease-out; }
-
-  .log-line { font-family:'JetBrains Mono',monospace; font-size:.73rem; color:#64748b; padding:.1rem 0; border-bottom:1px solid #1e293b; }
-  .log-line.err { color:#f87171; }
-  .log-line.ok  { color:#4ade80; }
-
-  .spinner { display:inline-block; width:14px; height:14px; border:2px solid #33415550; border-top-color:#38bdf8; border-radius:50%; animation:spin .7s linear infinite; }
-  @keyframes spin { to { transform:rotate(360deg); } }
-
-  ::-webkit-scrollbar      { width:6px; height:6px; }
-  ::-webkit-scrollbar-track { background:#0f172a; }
-  ::-webkit-scrollbar-thumb { background:#334155; border-radius:3px; }
-</style>
+  </script>
+  <link rel="stylesheet" href="style.css" />
 </head>
-<body class="h-full flex flex-col min-h-screen">
 
-<!-- ═══════════════════════  HEADER  ═══════════════════════ -->
-<header class="flex items-center justify-between px-6 py-3 border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-40">
-  <div class="flex items-center gap-3">
-    <!-- Telepresence-ish logo mark -->
-    <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="14" cy="14" r="13" stroke="#0ea5e9" stroke-width="1.5"/>
-      <circle cx="14" cy="14" r="5" fill="#0ea5e9" opacity=".8"/>
-      <circle cx="14" cy="14" r="9" stroke="#0ea5e9" stroke-width="1" stroke-dasharray="3 3" opacity=".5"/>
-    </svg>
-    <span class="font-bold text-lg tracking-tight text-white">tp<span class="text-sky-400">-gui</span></span>
-  </div>
+<body x-data class="h-full flex flex-col min-h-screen">
 
-  <div class="flex items-center gap-3">
-    <!-- connection status pill -->
-    <div id="hdr-status" class="pill pill-yellow">
-      <div class="dot dot-yellow"></div>
-      <span>checking…</span>
-    </div>
-
-    <!-- namespace selector -->
-    <select id="ns-select" class="w-36 text-xs py-1.5" title="Active namespace">
-      <option value="">default</option>
-    </select>
-
-    <!-- Connect / Quit -->
-    <button id="btn-connect" class="btn btn-green text-xs" onclick="apiConnect()">Connect</button>
-    <button id="btn-quit"    class="btn btn-danger text-xs" onclick="apiQuit()">Quit</button>
-
-    <!-- Refresh -->
-    <button class="btn btn-ghost text-xs" onclick="forceRefresh()" title="Refresh">
-      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5M4.07 16A9 9 0 1 0 6 6.3"/></svg>
-    </button>
-  </div>
-</header>
-
-<!-- ═══════════════════════  MAIN  ═══════════════════════ -->
-<main class="flex-1 px-6 py-5 max-w-7xl mx-auto w-full">
-
-  <!-- Tabs -->
-  <div class="flex gap-1 border-b border-slate-800 mb-5">
-    <div class="tab active" data-tab="services"  onclick="switchTab('services')">Services</div>
-    <div class="tab"        data-tab="intercepts" onclick="switchTab('intercepts')">
-      Active Intercepts
-      <span id="intercept-count" class="ml-1.5 pill pill-blue hidden">0</span>
-    </div>
-    <div class="tab"        data-tab="logs"       onclick="switchTab('logs')">Event Log</div>
-  </div>
-
-  <!-- ── Services tab ── -->
-  <div id="tab-services">
-    <div class="flex items-center justify-between mb-4">
-      <p class="text-sm text-slate-400">Services available to intercept in the connected cluster.</p>
-      <button class="btn btn-ghost text-xs" onclick="forceRefresh()">
-        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5M4.07 16A9 9 0 1 0 6 6.3"/></svg>
-        Refresh list
-      </button>
-    </div>
-
-    <div id="services-loading" class="text-center py-16 text-slate-500">
-      <div class="spinner mx-auto mb-3"></div>
-      <p class="text-sm">Waiting for connection…</p>
-    </div>
-
-    <div id="services-empty" class="hidden text-center py-16 text-slate-500">
-      <svg class="mx-auto mb-3 opacity-30" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M3 7h18M3 12h18M3 17h18"/>
+  <!-- ═══════════════════════  HEADER  ═══════════════════════ -->
+  <header
+    class="flex items-center justify-between px-6 py-3 border-b border-zinc-900 bg-black/80 backdrop-blur sticky top-0 z-40">
+    <div class="flex items-center gap-3">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="14" cy="14" r="13" stroke="#0ea5e9" stroke-width="1.5" />
+        <circle cx="14" cy="14" r="5" fill="#0ea5e9" opacity=".8" />
+        <circle cx="14" cy="14" r="9" stroke="#0ea5e9" stroke-width="1" stroke-dasharray="3 3" opacity=".5" />
       </svg>
-      <p class="text-sm">No interceptable workloads found.</p>
+      <span class="font-bold text-lg tracking-tight text-white">tp<span class="text-sky-400">-gui</span></span>
     </div>
 
-    <div id="services-grid" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 hidden"></div>
-  </div>
-
-  <!-- ── Intercepts tab ── -->
-  <div id="tab-intercepts" class="hidden">
-    <div id="intercepts-empty" class="text-center py-16 text-slate-500">
-      <svg class="mx-auto mb-3 opacity-30" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
-      </svg>
-      <p class="text-sm">No active intercepts.</p>
+    <div class="flex items-center gap-3">
+      <!-- shown only when connected to a cluster -->
+      <template x-if="$store.tp.connected">
+        <div class="flex items-center gap-3">
+          <span class="text-xs text-zinc-500 hidden sm:block" x-text="$store.tp.statusLabel"></span>
+          <select x-model="$store.tp.currentNs" @change="$store.tp.onNamespaceChange()" class="w-36 text-xs py-1.5"
+            title="Switch namespace">
+            <template x-for="ns in $store.tp.namespaces" :key="ns">
+              <option :value="ns" x-text="ns"></option>
+            </template>
+          </select>
+          <button class="btn btn-ghost text-xs" @click="$store.tp.fetchWorkloads()" title="Refresh workloads">
+            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5M4.07 16A9 9 0 1 0 6 6.3" />
+            </svg>
+          </button>
+          <button class="btn btn-danger text-xs" :disabled="$store.tp.quitting" @click="$store.tp.apiQuit()">
+            <span x-show="!$store.tp.quitting">Disconnect</span>
+            <span x-show="$store.tp.quitting"><div class="spinner"></div></span>
+          </button>
+        </div>
+      </template>
     </div>
-    <div id="intercepts-grid" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 hidden"></div>
-  </div>
+  </header>
 
-  <!-- ── Logs tab ── -->
-  <div id="tab-logs" class="hidden">
-    <div class="flex items-center justify-between mb-3">
-      <p class="text-sm text-slate-400">Live SSE event stream from the tp-gui server.</p>
-      <button class="btn btn-ghost text-xs" onclick="clearLogs()">Clear</button>
+  <!-- ═══════════════════════  MAIN  ═══════════════════════ -->
+  <main class="flex-1 px-6 py-5 max-w-3xl mx-auto w-full">
+
+    <!-- ── Namespace picker (not connected) ── -->
+    <div x-show="!$store.tp.connected">
+      <div class="mb-6">
+        <h2 class="text-base font-semibold text-white mb-1">Connect to a namespace</h2>
+        <p class="text-sm text-zinc-500">Pick a namespace to start a telepresence session.</p>
+      </div>
+
+      <!-- loading namespaces -->
+      <div x-show="$store.tp.namespaces.length === 0" class="text-center py-16 text-zinc-600">
+        <div class="spinner mx-auto mb-3"></div>
+        <p class="text-sm">Discovering namespaces…</p>
+      </div>
+
+      <!-- namespace list -->
+      <div x-show="$store.tp.namespaces.length > 0" class="card !p-0 overflow-hidden divide-y divide-zinc-900">
+        <template x-for="ns in $store.tp.namespaces" :key="ns">
+          <div class="flex items-center justify-between px-4 py-3 transition-colors hover:bg-white/[0.025]">
+            <div class="flex items-center gap-3">
+              <div class="w-0.5 h-4 rounded-full bg-zinc-800 flex-shrink-0"></div>
+              <span class="text-sm text-white font-medium" x-text="ns"></span>
+            </div>
+            <button class="btn btn-green text-xs" :disabled="$store.tp.connectingNs !== ''"
+              @click="$store.tp.apiConnect(ns)">
+              <span x-show="$store.tp.connectingNs !== ns">Connect</span>
+              <span x-show="$store.tp.connectingNs === ns"><div class="spinner"></div></span>
+            </button>
+          </div>
+        </template>
+      </div>
     </div>
-    <div id="log-panel" class="card h-96 overflow-y-auto font-mono text-xs leading-relaxed bg-slate-950"></div>
-  </div>
 
-</main>
+    <!-- ── Connected view ── -->
+    <div x-show="$store.tp.connected">
 
-<!-- ═══════════════════════  INTERCEPT MODAL  ═══════════════════════ -->
-<div id="intercept-modal" class="modal-backdrop" onclick="if(event.target===this)closeModal()">
-  <div class="modal w-full max-w-lg">
-    <div class="flex items-center justify-between mb-5">
-      <h2 class="font-bold text-base text-white">Intercept <span id="modal-name" class="text-sky-400"></span></h2>
-      <button class="text-slate-500 hover:text-white transition-colors" onclick="closeModal()">
-        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>
+      <!-- Tabs -->
+      <div class="flex gap-1 border-b border-zinc-900 mb-5">
+        <div :class="$store.tp.tab === 'workloads' ? 'tab active' : 'tab'" @click="$store.tp.tab = 'workloads'">
+          Workloads
+          <span x-show="$store.tp.intercepts.length > 0" x-text="$store.tp.intercepts.length"
+            class="ml-1.5 pill pill-blue"></span>
+        </div>
+        <div :class="$store.tp.tab === 'logs' ? 'tab active' : 'tab'" @click="$store.tp.tab = 'logs'">Event Log</div>
+      </div>
+
+    <!-- ── Workloads tab ── -->
+    <div x-show="$store.tp.tab === 'workloads'">
+      <div class="flex items-center justify-between mb-4">
+        <p class="text-sm text-zinc-500">
+          <span x-show="$store.tp.loaded"
+            x-text="$store.tp.workloads.length + ' workload' + ($store.tp.workloads.length !== 1 ? 's' : '')"></span>
+          <span x-show="!$store.tp.loaded">Waiting for connection…</span>
+          <span x-show="$store.tp.loaded && $store.tp.intercepts.length > 0" class="text-sky-400 ml-1"
+            x-text="'· ' + $store.tp.intercepts.length + ' intercepted'"></span>
+        </p>
+        <button class="btn btn-ghost text-xs" @click="$store.tp.fetchWorkloads()">
+          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5M4.07 16A9 9 0 1 0 6 6.3" />
+          </svg>
+          Refresh
+        </button>
+      </div>
+
+      <!-- loading -->
+      <div x-show="!$store.tp.loaded" class="text-center py-16 text-zinc-600">
+        <div class="spinner mx-auto mb-3"></div>
+        <p class="text-sm">Waiting for connection…</p>
+      </div>
+
+      <!-- empty -->
+      <div x-show="$store.tp.loaded && $store.tp.workloads.length === 0" class="text-center py-16 text-zinc-600">
+        <svg class="mx-auto mb-3 opacity-30" width="40" height="40" fill="none" stroke="currentColor"
+          stroke-width="1.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3 7h18M3 12h18M3 17h18" />
         </svg>
-      </button>
+        <p class="text-sm">No interceptable workloads found.</p>
+      </div>
+
+      <!-- unified list -->
+      <div x-show="$store.tp.loaded && $store.tp.workloads.length > 0"
+        class="card !p-0 overflow-hidden divide-y divide-zinc-900">
+        <template x-for="w in $store.tp.workloads" :key="w.name + (w.namespace || '')">
+          <div class="flex items-center gap-3 px-4 py-3 transition-colors"
+            :class="w.intercepted ? 'bg-sky-950/20' : 'hover:bg-white/[0.025]'">
+
+            <!-- left accent bar -->
+            <div class="w-0.5 self-stretch rounded-full flex-shrink-0"
+              :class="w.intercepted ? 'bg-sky-500' : 'bg-zinc-800'"></div>
+
+            <!-- name + meta -->
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2">
+                <span class="font-semibold text-sm text-white truncate" x-text="w.name" :title="w.name"></span>
+                <span x-show="w.intercepted" class="pill pill-blue">active</span>
+              </div>
+              <div class="text-xs text-zinc-600 mt-0.5"
+                x-text="(w.kind || 'Deployment') + ' · ' + (w.namespace || 'default')"></div>
+            </div>
+
+            <!-- intercept port details -->
+            <div x-show="w.intercepted && w.intercept"
+              class="hidden sm:flex items-center gap-2 text-xs flex-shrink-0">
+              <span x-show="w.intercept && w.intercept.localPort"
+                class="font-mono bg-zinc-900 border border-zinc-800 px-2 py-0.5 rounded text-zinc-400"
+                x-text="':' + (w.intercept && w.intercept.localPort)"></span>
+              <span x-show="w.intercept && w.intercept.remotePort" class="text-zinc-600"
+                x-text="'→ ' + (w.intercept && w.intercept.remotePort)"></span>
+            </div>
+
+            <!-- action button -->
+            <div class="flex-shrink-0">
+              <button x-show="!w.intercepted" class="btn btn-primary text-xs" @click="$store.tp.openModal(w)">
+                <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                Intercept
+              </button>
+              <button x-show="w.intercepted" class="btn btn-danger text-xs" @click="$store.tp.apiLeave(w.name)">
+                <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                </svg>
+                Stop
+              </button>
+            </div>
+
+          </div>
+        </template>
+      </div>
     </div>
 
-    <div class="space-y-4">
-      <div class="grid grid-cols-2 gap-3">
-        <div>
-          <label>Local port</label>
-          <input id="modal-local-port" type="number" placeholder="e.g. 8080" min="1" max="65535" />
-        </div>
-        <div>
-          <label>Remote port <span class="text-slate-600">(optional)</span></label>
-          <input id="modal-remote-port" type="number" placeholder="service port" min="1" max="65535" />
-        </div>
+    <!-- ── Logs tab ── -->
+    <div x-show="$store.tp.tab === 'logs'">
+      <div class="flex items-center justify-between mb-3">
+        <p class="text-sm text-zinc-500">Live SSE event stream from the tp-gui server.</p>
+        <button class="btn btn-ghost text-xs" @click="$store.tp.clearLogs()">Clear</button>
       </div>
-
-      <div>
-        <label>Env file <span class="text-slate-600">(optional)</span></label>
-        <input id="modal-env-file" type="text" placeholder="/tmp/intercept.env" />
-        <p class="text-xs text-slate-600 mt-1">Intercept env vars will be written here.</p>
-      </div>
-
-      <div>
-        <label>Mount path <span class="text-slate-600">(optional)</span></label>
-        <input id="modal-mount" type="text" placeholder="/tmp/intercept-mount" />
-        <p class="text-xs text-slate-600 mt-1">Remote volume mounts will be available here.</p>
-      </div>
-
-      <!-- Preview URL if available -->
-      <div id="modal-preview-section" class="hidden rounded-lg border border-slate-700 bg-slate-900 p-3 text-sm text-slate-400">
-        <span class="text-yellow-400 font-semibold">Preview URL</span> will be printed to the Event Log once traffic routing is active.
+      <div id="log-panel" class="card h-96 overflow-y-auto font-mono text-xs leading-relaxed bg-black/60">
+        <template x-for="(entry, i) in $store.tp.logs" :key="i">
+          <div :class="'log-line' + (entry.type ? ' ' + entry.type : '')">
+            <span class="text-zinc-700" x-text="'[' + entry.ts + '] '"></span><span x-text="entry.msg"></span>
+          </div>
+        </template>
       </div>
     </div>
 
-    <div class="flex gap-2 mt-6 justify-end">
-      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-      <button id="modal-submit" class="btn btn-primary" onclick="submitIntercept()">
-        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-        Start intercept
-      </button>
+    </div> <!-- end connected view -->
+
+  </main>
+
+  <!-- ═══════════════════════  INTERCEPT MODAL  ═══════════════════════ -->
+  <div x-cloak x-show="$store.tp.modal.open" x-transition:enter="transition ease-out duration-150"
+    x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+    x-transition:leave="transition ease-in duration-100" x-transition:leave-start="opacity-100"
+    x-transition:leave-end="opacity-0" @keydown.escape.window="$store.tp.closeModal()"
+    @click.self="$store.tp.closeModal()" class="modal-backdrop">
+    <div class="modal w-full max-w-lg" x-transition:enter="transition ease-out duration-150"
+      x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100">
+      <div class="flex items-center justify-between mb-5">
+        <h2 class="font-bold text-base text-white">
+          Intercept <span class="text-sky-400" x-text="$store.tp.modal.workload?.name"></span>
+        </h2>
+        <button class="text-zinc-600 hover:text-white transition-colors" @click="$store.tp.closeModal()">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label>Local port</label>
+            <input x-model="$store.tp.modal.localPort" type="number" placeholder="e.g. 8080" min="1" max="65535" />
+          </div>
+          <div>
+            <label>Remote port <span class="text-zinc-700">(optional)</span></label>
+            <input x-model="$store.tp.modal.remotePort" type="number" placeholder="service port" min="1" max="65535" />
+          </div>
+        </div>
+
+        <div>
+          <label>Env file <span class="text-zinc-700">(optional)</span></label>
+          <input x-model="$store.tp.modal.envFile" type="text" placeholder="/tmp/intercept.env" />
+          <p class="text-xs text-zinc-700 mt-1">Intercept env vars will be written here.</p>
+        </div>
+
+        <div>
+          <label>Mount path <span class="text-zinc-700">(optional)</span></label>
+          <input x-model="$store.tp.modal.mountPath" type="text" placeholder="/tmp/intercept-mount" />
+          <p class="text-xs text-zinc-700 mt-1">Remote volume mounts will be available here.</p>
+        </div>
+
+        <div class="rounded-lg border border-zinc-800 bg-black/40 p-3 text-sm text-zinc-500">
+          <span class="text-yellow-400 font-semibold">Preview URL</span> will be printed to the Event Log once traffic
+          routing is active.
+        </div>
+      </div>
+
+      <div class="flex gap-2 mt-6 justify-end">
+        <button class="btn btn-ghost" @click="$store.tp.closeModal()">Cancel</button>
+        <button class="btn btn-primary" :disabled="$store.tp.modal.submitting" @click="$store.tp.submitIntercept()">
+          <span x-show="!$store.tp.modal.submitting">
+            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </span>
+          <span x-show="$store.tp.modal.submitting">
+            <div class="spinner"></div>
+          </span>
+          <span x-text="$store.tp.modal.submitting ? 'Starting…' : 'Start intercept'"></span>
+        </button>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- ═══════════════════════  TOAST  ═══════════════════════ -->
-<div id="toast-container" class="fixed bottom-6 right-6 flex flex-col gap-2 z-50 pointer-events-none"></div>
-
-<!-- ═══════════════════════  JAVASCRIPT  ═══════════════════════ -->
-<script>
-// ── State ──────────────────────────────────────────────────────────
-let state = {
-  connected: false,
-  workloads: [],
-  namespaces: [],
-  currentNs: '',
-  pendingIntercept: null,  // { workload, namespace }
-};
-
-// ── Tabs ───────────────────────────────────────────────────────────
-function switchTab(name) {
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.querySelector(`[data-tab="${name}"]`).classList.add('active');
-  ['services','intercepts','logs'].forEach(t => {
-    document.getElementById(`tab-${t}`).classList.toggle('hidden', t !== name);
-  });
-}
-
-// ── Toast ──────────────────────────────────────────────────────────
-function toast(msg, type = 'info') {
-  const colors = { info:'bg-slate-700 text-slate-200', ok:'bg-green-900 text-green-200', err:'bg-red-900 text-red-200' };
-  const el = document.createElement('div');
-  el.className = `pointer-events-auto max-w-xs rounded-lg px-4 py-2.5 text-sm shadow-xl border border-slate-600 ${colors[type]} transition-opacity`;
-  el.textContent = msg;
-  document.getElementById('toast-container').appendChild(el);
-  setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 3500);
-}
-
-// ── Log panel ─────────────────────────────────────────────────────
-function log(msg, type = '') {
-  const panel = document.getElementById('log-panel');
-  const line = document.createElement('div');
-  const ts = new Date().toLocaleTimeString('en-GB', {hour12:false});
-  line.className = `log-line${type?' '+type:''}`;
-  line.textContent = `[${ts}] ${msg}`;
-  panel.appendChild(line);
-  panel.scrollTop = panel.scrollHeight;
-  // keep max 300 lines
-  while (panel.children.length > 300) panel.removeChild(panel.firstChild);
-}
-function clearLogs() { document.getElementById('log-panel').innerHTML = ''; }
-
-// ── Header status pill ─────────────────────────────────────────────
-function setHeaderStatus(connected, context, ns) {
-  const el = document.getElementById('hdr-status');
-  if (connected) {
-    el.className = 'pill pill-green';
-    el.innerHTML = `<div class="dot dot-green"></div> ${context || 'Connected'}${ns?' · '+ns:''}`;
-  } else {
-    el.className = 'pill pill-red';
-    el.innerHTML = `<div class="dot dot-red"></div> Disconnected`;
-  }
-  document.getElementById('btn-connect').disabled = connected;
-  document.getElementById('btn-quit').disabled    = !connected;
-}
-
-// ── Namespace selector ─────────────────────────────────────────────
-async function loadNamespaces() {
-  try {
-    const r = await fetch('/api/namespaces');
-    if (!r.ok) return;
-    const ns = await r.json();
-    const sel = document.getElementById('ns-select');
-    const cur = sel.value;
-    sel.innerHTML = ns.map(n => `<option value="${n}">${n}</option>`).join('');
-    if (cur && ns.includes(cur)) sel.value = cur;
-    state.namespaces = ns;
-  } catch(_) {}
-}
-
-document.getElementById('ns-select').addEventListener('change', function() {
-  state.currentNs = this.value;
-  forceRefresh();
-});
-
-// ── Services rendering ────────────────────────────────────────────
-function renderServices(workloads) {
-  state.workloads = workloads;
-  const grid  = document.getElementById('services-grid');
-  const empty = document.getElementById('services-empty');
-  const loading = document.getElementById('services-loading');
-
-  loading.classList.add('hidden');
-
-  const items = workloads.filter(w => !w.intercepted);
-
-  if (items.length === 0) {
-    grid.classList.add('hidden');
-    empty.classList.remove('hidden');
-    return;
-  }
-  empty.classList.add('hidden');
-  grid.classList.remove('hidden');
-
-  grid.innerHTML = items.map(w => `
-    <div class="card flex flex-col gap-3">
-      <div class="flex items-start justify-between">
-        <div>
-          <div class="font-semibold text-sm text-white truncate max-w-[200px]" title="${esc(w.name)}">${esc(w.name)}</div>
-          <div class="text-xs text-slate-500 mt-0.5">${esc(w.kind||'Deployment')} · ${esc(w.namespace||'default')}</div>
-        </div>
-        <span class="pill pill-green text-xs">ready</span>
+  <!-- ═══════════════════════  TOASTS  ═══════════════════════ -->
+  <div class="fixed bottom-6 right-6 flex flex-col gap-2 z-[200] pointer-events-none">
+    <template x-for="t in $store.tp.toasts" :key="t.id">
+      <div
+        x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="opacity-0 translate-y-2"
+        x-transition:enter-end="opacity-100 translate-y-0"
+        x-transition:leave="transition ease-in duration-150"
+        x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0"
+        class="pointer-events-auto max-w-xs rounded-lg px-4 py-2.5 text-sm shadow-xl border"
+        :class="{
+           'bg-zinc-800 border-zinc-700 text-zinc-200': t.type === 'info',
+           'bg-green-950 border-green-800 text-green-200': t.type === 'ok',
+           'bg-red-950   border-red-800   text-red-200':   t.type === 'err'
+         }" x-text="t.msg">
       </div>
-      <button class="btn btn-primary w-full justify-center text-xs"
-              onclick='openModal(${JSON.stringify(w)})'>
-        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-        Intercept
-      </button>
-    </div>
-  `).join('');
-}
-
-function renderIntercepts(workloads) {
-  const active = workloads.filter(w => w.intercepted);
-  const grid  = document.getElementById('intercepts-grid');
-  const empty = document.getElementById('intercepts-empty');
-  const badge = document.getElementById('intercept-count');
-
-  if (active.length === 0) {
-    grid.classList.add('hidden');
-    empty.classList.remove('hidden');
-    badge.classList.add('hidden');
-  } else {
-    empty.classList.add('hidden');
-    grid.classList.remove('hidden');
-    badge.classList.remove('hidden');
-    badge.textContent = active.length;
-  }
-
-  grid.innerHTML = active.map(w => {
-    const ic = w.intercept;
-    return `
-    <div class="card flex flex-col gap-3 border-sky-900/60">
-      <div class="flex items-start justify-between">
-        <div>
-          <div class="font-semibold text-sm text-white truncate max-w-[200px]" title="${esc(w.name)}">${esc(w.name)}</div>
-          <div class="text-xs text-slate-500 mt-0.5">${esc(w.namespace||'default')}</div>
-        </div>
-        <span class="pill pill-blue text-xs">intercepted</span>
-      </div>
-      ${ic ? `
-      <div class="text-xs bg-slate-900 rounded-lg p-2.5 space-y-1">
-        ${ic.localPort  ? `<div class="flex justify-between"><span class="text-slate-500">Local port</span><span class="font-mono text-slate-300">${ic.localPort}</span></div>` : ''}
-        ${ic.remotePort ? `<div class="flex justify-between"><span class="text-slate-500">Remote port</span><span class="font-mono text-slate-300">${ic.remotePort}</span></div>` : ''}
-        ${ic.client     ? `<div class="flex justify-between"><span class="text-slate-500">Client</span><span class="font-mono text-slate-300 truncate max-w-[120px]">${esc(ic.client)}</span></div>` : ''}
-      </div>` : ''}
-      <button class="btn btn-danger w-full justify-center text-xs"
-              onclick="apiLeave('${esc(w.name)}')">
-        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
-        Stop intercept
-      </button>
-    </div>`;
-  }).join('');
-}
-
-// ── Modal ─────────────────────────────────────────────────────────
-function openModal(workload) {
-  state.pendingIntercept = workload;
-  document.getElementById('modal-name').textContent = workload.name;
-  document.getElementById('modal-local-port').value  = '';
-  document.getElementById('modal-remote-port').value = '';
-  document.getElementById('modal-env-file').value    = '';
-  document.getElementById('modal-mount').value       = '';
-  document.getElementById('intercept-modal').classList.add('open');
-  document.getElementById('modal-local-port').focus();
-}
-function closeModal() {
-  document.getElementById('intercept-modal').classList.remove('open');
-  state.pendingIntercept = null;
-}
-
-// Close modal on Escape
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
-
-async function submitIntercept() {
-  const w = state.pendingIntercept;
-  if (!w) return;
-  const btn = document.getElementById('modal-submit');
-  btn.disabled = true;
-  btn.innerHTML = '<div class="spinner"></div> Starting…';
-
-  const payload = {
-    workload:   w.name,
-    namespace:  w.namespace || state.currentNs || 'default',
-    localPort:  document.getElementById('modal-local-port').value.trim(),
-    remotePort: document.getElementById('modal-remote-port').value.trim(),
-    envFile:    document.getElementById('modal-env-file').value.trim(),
-    mountPath:  document.getElementById('modal-mount').value.trim(),
-  };
-
-  try {
-    const r = await fetch('/api/intercept', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify(payload),
-    });
-    const data = await r.json();
-    if (!r.ok) throw new Error(data.error || 'intercept failed');
-    toast(`Intercept started: ${w.name}`, 'ok');
-    log(`✓ intercept started: ${w.name} (local:${payload.localPort||'auto'})`, 'ok');
-    closeModal();
-    switchTab('intercepts');
-  } catch(e) {
-    toast(e.message, 'err');
-    log(`✗ intercept error: ${e.message}`, 'err');
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = '<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg> Start intercept';
-  }
-}
-
-// ── API calls ──────────────────────────────────────────────────────
-async function apiLeave(name) {
-  const btn = event.target.closest('button');
-  if(btn) { btn.disabled=true; btn.innerHTML='<div class="spinner"></div> Stopping…'; }
-  try {
-    const r = await fetch('/api/leave', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({name}),
-    });
-    const data = await r.json();
-    if (!r.ok) throw new Error(data.error || 'leave failed');
-    toast(`Stopped: ${name}`, 'ok');
-    log(`✓ intercept stopped: ${name}`, 'ok');
-  } catch(e) {
-    toast(e.message, 'err');
-    log(`✗ leave error: ${e.message}`, 'err');
-    if(btn) { btn.disabled=false; btn.textContent='Stop intercept'; }
-  }
-}
-
-async function apiConnect() {
-  const ns = document.getElementById('ns-select').value;
-  document.getElementById('btn-connect').disabled = true;
-  document.getElementById('btn-connect').innerHTML = '<div class="spinner"></div>';
-  log(`→ connecting (namespace: ${ns||'default'})…`);
-  try {
-    const r = await fetch(`/api/connect?namespace=${encodeURIComponent(ns)}`, {method:'POST'});
-    const data = await r.json();
-    if (!r.ok) throw new Error(data.error || 'connect failed');
-    toast('Connected to cluster', 'ok');
-    log('✓ connected', 'ok');
-  } catch(e) {
-    toast(e.message, 'err');
-    log(`✗ connect: ${e.message}`, 'err');
-    document.getElementById('btn-connect').disabled = false;
-  }
-  document.getElementById('btn-connect').innerHTML = 'Connect';
-}
-
-async function apiQuit() {
-  document.getElementById('btn-quit').disabled = true;
-  document.getElementById('btn-quit').innerHTML = '<div class="spinner"></div>';
-  log('→ disconnecting…');
-  try {
-    const r = await fetch('/api/quit', {method:'POST'});
-    const data = await r.json();
-    if (!r.ok) throw new Error(data.error || 'quit failed');
-    toast('Disconnected', 'info');
-    log('✓ disconnected');
-  } catch(e) {
-    toast(e.message, 'err');
-    log(`✗ quit: ${e.message}`, 'err');
-    document.getElementById('btn-quit').disabled = false;
-  }
-  document.getElementById('btn-quit').innerHTML = 'Quit';
-}
-
-async function forceRefresh() {
-  const ns = document.getElementById('ns-select').value;
-  try {
-    const r = await fetch(`/api/workloads?namespace=${encodeURIComponent(ns)}`);
-    if (!r.ok) return;
-    const workloads = await r.json();
-    renderServices(workloads);
-    renderIntercepts(workloads);
-  } catch(_) {}
-  loadNamespaces();
-}
-
-// ── SSE connection ─────────────────────────────────────────────────
-let sseRetry = 1000;
-function connectSSE() {
-  const es = new EventSource('/events');
-
-  es.addEventListener('status', e => {
-    const s = JSON.parse(e.data);
-    state.connected = s.connected;
-    setHeaderStatus(s.connected, s.context, s.namespace);
-    if (s.connected && state.namespaces.length === 0) loadNamespaces();
-  });
-
-  es.addEventListener('workloads', e => {
-    const workloads = JSON.parse(e.data);
-    renderServices(workloads);
-    renderIntercepts(workloads);
-  });
-
-  es.onmessage = e => {
-    if (e.data) log(e.data);
-  };
-
-  es.onerror = () => {
-    es.close();
-    document.getElementById('hdr-status').className = 'pill pill-red';
-    document.getElementById('hdr-status').innerHTML = '<div class="dot dot-red"></div> Reconnecting…';
-    setTimeout(connectSSE, Math.min(sseRetry *= 1.5, 10000));
-  };
-
-  es.onopen = () => {
-    sseRetry = 1000;
-    log('✓ connected to tp-gui server', 'ok');
-  };
-}
-
-// ── Helpers ────────────────────────────────────────────────────────
-function esc(s) {
-  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-// ── Boot ───────────────────────────────────────────────────────────
-connectSSE();
-// Initial namespace load (even before SSE connects)
-loadNamespaces();
-</script>
+    </template>
+  </div>
+  <!-- app.js must come before Alpine so alpine:init listener fires first -->
+  <script src="app.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
 </body>
+
 </html>

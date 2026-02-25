@@ -22,7 +22,7 @@ help: ## 📚 Display this help
 .PHONY: build
 build: ## 🔨 Build the application
 	@echo "🔨 Building Go application..."
-	@CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -ldflags="-w -s -extldflags=-static" -o tp-gui .
+	@CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -ldflags="-w -s -extldflags=-static" -o dist/tp-gui .
 	@echo "✅ Build completed successfully!"
 
 .PHONY: run

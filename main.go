@@ -17,8 +17,8 @@ import (
 )
 
 var (
-	flagPort      int
-	flagNoBrowser bool
+	flagPort        int
+	flagOpenBrowser bool
 )
 
 var rootCmd = &cobra.Command{
@@ -30,7 +30,7 @@ var rootCmd = &cobra.Command{
 
 func init() {
 	rootCmd.Flags().IntVarP(&flagPort, "port", "p", 7777, "port to listen on")
-	rootCmd.Flags().BoolVar(&flagNoBrowser, "no-browser", false, "don't open the browser automatically")
+	rootCmd.Flags().BoolVar(&flagOpenBrowser, "open-browser", false, "open the browser automatically")
 }
 
 func main() {
@@ -43,7 +43,7 @@ func run(cmd *cobra.Command, args []string) error {
 	if !TpBinaryExists() {
 		fmt.Fprintln(os.Stderr, "⚠  'telepresence' binary not found on PATH.")
 		fmt.Fprintln(os.Stderr, "   Install it: https://www.telepresence.io/docs/install")
-		fmt.Fprintln(os.Stderr, "   tp-gui will still start — some features won't work.")
+		os.Exit(1)
 	}
 
 	// Pick a free port if the requested one is busy
@@ -51,7 +51,7 @@ func run(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("no available port: %w", err)
 	}
-	addr := fmt.Sprintf("127.0.0.1:%d", port)
+	addr := fmt.Sprintf("localhost:%d", port)
 	url := fmt.Sprintf("http://%s", addr)
 
 	// Background context — cancelled on SIGINT/SIGTERM
@@ -85,7 +85,7 @@ func run(cmd *cobra.Command, args []string) error {
 	fmt.Printf("✓ tp-gui running at %s\n", url)
 	fmt.Println("  Press Ctrl+C to stop.")
 
-	if !flagNoBrowser {
+	if flagOpenBrowser {
 		// Small delay so the server is ready
 		time.Sleep(300 * time.Millisecond)
 		openBrowser(url)
