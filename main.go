@@ -19,6 +19,7 @@ import (
 var (
 	flagPort        int
 	flagOpenBrowser bool
+	flagDebug       bool
 )
 
 var rootCmd = &cobra.Command{
@@ -31,6 +32,7 @@ var rootCmd = &cobra.Command{
 func init() {
 	rootCmd.Flags().IntVarP(&flagPort, "port", "p", 7777, "port to listen on")
 	rootCmd.Flags().BoolVar(&flagOpenBrowser, "open-browser", false, "open the browser automatically")
+	rootCmd.Flags().BoolVar(&flagDebug, "debug", false, "log every subprocess call to stderr")
 }
 
 func main() {

@@ -12,6 +12,8 @@ document.addEventListener('alpine:init', () => {
     tab:        'workloads',
     connecting: false,  // kept for SSE compat
     connectingNs: '',
+    nsFilter:     '',
+    workloadFilter: '',
     quitting:   false,
     sseRetry:   1000,
 
@@ -31,6 +33,19 @@ document.addEventListener('alpine:init', () => {
     // ── Computed ─────────────────────────────────────────────────
     get services()  { return this.workloads.filter(w => !w.intercepted); },
     get intercepts(){ return this.workloads.filter(w =>  w.intercepted); },
+    get filteredNamespaces() {
+      const q = this.nsFilter.toLowerCase();
+      if (!q) return this.namespaces;
+      return this.namespaces.filter(ns => ns.toLowerCase().includes(q));
+    },
+    get filteredWorkloads() {
+      const q = this.workloadFilter.toLowerCase();
+      const list = q
+        ? this.workloads.filter(w => w.name.toLowerCase().includes(q) || (w.namespace||'').toLowerCase().includes(q))
+        : this.workloads;
+      // intercepted rows float to top
+      return [...list].sort((a, b) => (b.intercepted ? 1 : 0) - (a.intercepted ? 1 : 0));
+    },
     get statusLabel() {
       if (!this.connected) return 'No cluster';
       return (this.context || 'Connected') + (this.namespace ? ' · ' + this.namespace : '');

@@ -5,11 +5,21 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
+	"os"
 	"os/exec"
 	"strings"
-	"sync"
 	"time"
 )
+
+// dbg is the debug logger; it is a no-op until --debug is passed.
+var dbg = log.New(os.Stderr, "\033[2m[dbg] ", log.Ltime|log.Lmicroseconds)
+
+func debugf(format string, a ...any) {
+	if flagDebug {
+		dbg.Printf(format+"\033[0m", a...)
+	}
+}
 
 // ---------------------------------------------------------------------------
 // Domain types
@@ -34,11 +44,17 @@ type Workload struct {
 }
 
 type ActiveIntercept struct {
-	Name       string `json:"name"`
-	Client     string `json:"client"`
-	LocalPort  int    `json:"localPort"`
-	RemotePort int    `json:"remotePort"`
-	Namespace  string `json:"namespace"`
+	Name          string `json:"name"`
+	Client        string `json:"client"`
+	LocalPort     int    `json:"localPort"`
+	RemotePort    int    `json:"remotePort"`
+	Namespace     string `json:"namespace"`
+	TargetHost    string `json:"targetHost,omitempty"`
+	ContainerPort int    `json:"containerPort,omitempty"`
+	Protocol      string `json:"protocol,omitempty"`
+	Mechanism     string `json:"mechanism,omitempty"`
+	Replace       bool   `json:"replace,omitempty"`
+	Wiretap       bool   `json:"wiretap,omitempty"`
 }
 
 type InterceptRequest struct {
@@ -51,29 +67,6 @@ type InterceptRequest struct {
 }
 
 // ---------------------------------------------------------------------------
-// Process manager — keeps track of long-running intercept subprocesses
-// ---------------------------------------------------------------------------
-
-type processManager struct {
-	mu    sync.Mutex
-	procs map[string]*exec.Cmd
-}
-
-var procMgr = &processManager{procs: make(map[string]*exec.Cmd)}
-
-func (pm *processManager) add(name string, cmd *exec.Cmd) {
-	pm.mu.Lock()
-	defer pm.mu.Unlock()
-	pm.procs[name] = cmd
-}
-
-func (pm *processManager) remove(name string) {
-	pm.mu.Lock()
-	defer pm.mu.Unlock()
-	delete(pm.procs, name)
-}
-
-// ---------------------------------------------------------------------------
 // Telepresence CLI wrapper
 // ---------------------------------------------------------------------------
 
@@ -83,8 +76,30 @@ func tpRun(ctx context.Context, args ...string) (string, string, error) {
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
+	debugf("▶ telepresence %s", strings.Join(args, " "))
+	start := time.Now()
 	err := cmd.Run()
-	return strings.TrimSpace(stdout.String()), strings.TrimSpace(stderr.String()), err
+	elapsed := time.Since(start).Round(time.Millisecond)
+	out := strings.TrimSpace(stdout.String())
+	err2 := strings.TrimSpace(stderr.String())
+	if flagDebug {
+		if out != "" {
+			for _, line := range strings.Split(out, "\n") {
+				dbg.Printf("  stdout: %s\033[0m", line)
+			}
+		}
+		if err2 != "" {
+			for _, line := range strings.Split(err2, "\n") {
+				dbg.Printf("  stderr: %s\033[0m", line)
+			}
+		}
+		if err != nil {
+			dbg.Printf("  exit error after %s: %v\033[0m", elapsed, err)
+		} else {
+			dbg.Printf("  ok (%s)\033[0m", elapsed)
+		}
+	}
+	return out, err2, err
 }
 
 // BinaryExists returns true if the telepresence binary is on PATH.
@@ -109,7 +124,8 @@ type tpStatusJSON struct {
 		Namespace         string `json:"namespace"`
 		Status            string `json:"status"`
 		Intercepts        []struct {
-			Name string `json:"name"`
+			Name   string `json:"name"`
+			Client string `json:"client"`
 		} `json:"intercepts"`
 	} `json:"user_daemon"`
 }
@@ -182,10 +198,29 @@ type tpListJSON struct {
 		Namespace            string `json:"namespace"`
 		WorkloadResourceType string `json:"workload_resource_type"`
 		Intercept            *struct {
-			Client     string `json:"client"`
-			LocalPort  int    `json:"localPort"`
-			RemotePort int    `json:"servicePortIdentifier"`
-		} `json:"intercept"`
+			Spec struct {
+				Name            string `json:"name"`
+				Client          string `json:"client"`
+				Agent           string `json:"agent"`
+				Mechanism       string `json:"mechanism"`
+				TargetHost      string `json:"target_host"`
+				PortIdentifier  string `json:"port_identifier"`
+				ServicePort     int    `json:"service_port"`
+				ServicePortName string `json:"service_port_name"`
+				ServiceUID      string `json:"service_uid"`
+				Protocol        string `json:"protocol"`
+				ContainerName   string `json:"container_name"`
+				ContainerPort   int    `json:"container_port"`
+				TargetPort      int    `json:"target_port"`
+				Replace         bool   `json:"replace"`
+				Wiretap         bool   `json:"wiretap"`
+			} `json:"spec"`
+			Client      string            `json:"client"`
+			LocalPort   int               `json:"localPort"`
+			RemotePort  int               `json:"servicePortIdentifier"`
+			Environment map[string]string `json:"environment,omitempty"`
+		} `json:"intercept_info,omitempty"`
+		AgentVersion string `json:"agent_version"`
 	} `json:"stdout"`
 }
 
@@ -222,11 +257,17 @@ func ListWorkloads(ctx context.Context, namespace string) ([]Workload, error) {
 		}
 		if w.Intercept != nil {
 			wl.Intercept = &ActiveIntercept{
-				Name:       w.Name,
-				Client:     w.Intercept.Client,
-				LocalPort:  w.Intercept.LocalPort,
-				RemotePort: w.Intercept.RemotePort,
-				Namespace:  w.Namespace,
+				Name:          w.Name,
+				Client:        w.Intercept.Client,
+				LocalPort:     w.Intercept.LocalPort,
+				RemotePort:    w.Intercept.RemotePort,
+				Namespace:     w.Namespace,
+				TargetHost:    w.Intercept.Spec.TargetHost,
+				ContainerPort: w.Intercept.Spec.ContainerPort,
+				Protocol:      w.Intercept.Spec.Protocol,
+				Mechanism:     w.Intercept.Spec.Mechanism,
+				Replace:       w.Intercept.Spec.Replace,
+				Wiretap:       w.Intercept.Spec.Wiretap,
 			}
 		}
 		workloads = append(workloads, wl)
@@ -238,12 +279,16 @@ func ListWorkloads(ctx context.Context, namespace string) ([]Workload, error) {
 // Intercept
 // ---------------------------------------------------------------------------
 
-// StartIntercept starts `telepresence intercept` in a background goroutine.
-// The intercept process is long-lived; we track it so we can surface errors.
-func StartIntercept(req InterceptRequest) error {
+// StartIntercept runs `telepresence intercept` and waits for it to complete.
+// On error the JSON output contains {cmd, error}; on success it exits 0 with no output.
+func StartIntercept(ctx context.Context, req InterceptRequest) error {
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
 	args := []string{
 		"intercept", req.Workload,
 		"--namespace", req.Namespace,
+		"--output", "json",
 	}
 	if req.LocalPort != "" || req.RemotePort != "" {
 		portSpec := req.LocalPort
@@ -259,17 +304,22 @@ func StartIntercept(req InterceptRequest) error {
 		args = append(args, "--mount", req.MountPath)
 	}
 
-	cmd := exec.Command("telepresence", args...)
-	if err := cmd.Start(); err != nil {
-		return fmt.Errorf("failed to start intercept: %w", err)
+	stdout, stderr, err := tpRun(ctx, args...)
+	if err != nil {
+		// Try to extract the error message from JSON output first
+		var result struct {
+			Error string `json:"error"`
+		}
+		if stdout != "" {
+			if jsonErr := json.Unmarshal([]byte(stdout), &result); jsonErr == nil && result.Error != "" {
+				return fmt.Errorf("intercept failed: %s", result.Error)
+			}
+		}
+		if stderr != "" {
+			return fmt.Errorf("intercept failed: %s", stderr)
+		}
+		return fmt.Errorf("intercept failed: %w", err)
 	}
-	procMgr.add(req.Workload, cmd)
-
-	// Reap the process when it finishes so we don't leak goroutines
-	go func() {
-		_ = cmd.Wait()
-		procMgr.remove(req.Workload)
-	}()
 	return nil
 }
 
@@ -281,7 +331,6 @@ func LeaveIntercept(ctx context.Context, name string) error {
 	if err != nil {
 		return fmt.Errorf("leave failed: %s", stderr)
 	}
-	procMgr.remove(name)
 	return nil
 }
 
@@ -321,13 +370,17 @@ func ListNamespaces(ctx context.Context) ([]string, error) {
 	ctx, cancel := context.WithTimeout(ctx, 8*time.Second)
 	defer cancel()
 
-	cmd := exec.CommandContext(ctx, "kubectl", "get", "namespaces",
-		"-o", "jsonpath={.items[*].metadata.name}")
+	kArgs := []string{"get", "namespaces", "-o", "jsonpath={.items[*].metadata.name}"}
+	debugf("▶ kubectl %s", strings.Join(kArgs, " "))
+	start := time.Now()
+	cmd := exec.CommandContext(ctx, "kubectl", kArgs...)
 	var out bytes.Buffer
 	cmd.Stdout = &out
 	if err := cmd.Run(); err != nil {
+		debugf("  kubectl exit error after %s: %v\033[0m", time.Since(start).Round(time.Millisecond), err)
 		return []string{"default"}, nil
 	}
+	debugf("  ok (%s) stdout: %s", time.Since(start).Round(time.Millisecond), strings.TrimSpace(out.String()))
 	parts := strings.Fields(out.String())
 	if len(parts) == 0 {
 		return []string{"default"}, nil

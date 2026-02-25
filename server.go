@@ -165,7 +165,7 @@ func handleIntercept(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "workload is required")
 		return
 	}
-	if err := StartIntercept(req); err != nil {
+	if err := StartIntercept(r.Context(), req); err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
