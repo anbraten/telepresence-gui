@@ -131,7 +131,7 @@ type tpStatusJSON struct {
 }
 
 func GetStatus(ctx context.Context) ConnectionStatus {
-	ctx, cancel := context.WithTimeout(ctx, 8*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
 	defer cancel()
 
 	stdout, _, err := tpRun(ctx, "status", "--output", "json")
@@ -225,7 +225,7 @@ type tpListJSON struct {
 }
 
 func ListWorkloads(ctx context.Context, namespace string) ([]Workload, error) {
-	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
 	defer cancel()
 
 	args := []string{"list", "--output", "json"}
@@ -282,7 +282,7 @@ func ListWorkloads(ctx context.Context, namespace string) ([]Workload, error) {
 // StartIntercept runs `telepresence intercept` and waits for it to complete.
 // On error the JSON output contains {cmd, error}; on success it exits 0 with no output.
 func StartIntercept(ctx context.Context, req InterceptRequest) error {
-	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
 
 	args := []string{
@@ -325,7 +325,7 @@ func StartIntercept(ctx context.Context, req InterceptRequest) error {
 
 // LeaveIntercept calls `telepresence leave <name>`.
 func LeaveIntercept(ctx context.Context, name string) error {
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 	_, stderr, err := tpRun(ctx, "leave", name)
 	if err != nil {
@@ -339,7 +339,7 @@ func LeaveIntercept(ctx context.Context, name string) error {
 // ---------------------------------------------------------------------------
 
 func Connect(ctx context.Context, namespace string) error {
-	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 120*time.Second)
 	defer cancel()
 	args := []string{"connect"}
 	if namespace != "" {
@@ -353,7 +353,7 @@ func Connect(ctx context.Context, namespace string) error {
 }
 
 func Quit(ctx context.Context) error {
-	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
 	_, stderr, err := tpRun(ctx, "quit")
 	if err != nil {
@@ -367,7 +367,7 @@ func Quit(ctx context.Context) error {
 // ---------------------------------------------------------------------------
 
 func ListNamespaces(ctx context.Context) ([]string, error) {
-	ctx, cancel := context.WithTimeout(ctx, 8*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
 
 	kArgs := []string{"get", "namespaces", "-o", "jsonpath={.items[*].metadata.name}"}
