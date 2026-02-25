@@ -162,7 +162,7 @@ func GetStatus(ctx context.Context) ConnectionStatus {
 		}
 		cs.Context = raw.UserDaemon.KubernetesContext
 		cs.Namespace = raw.UserDaemon.Namespace
-		cs.Connected = strings.EqualFold(raw.UserDaemon.Status, "connected")
+		cs.Connected = cs.Context != "" && cs.Namespace != "" && cs.UserDaemon == "running"
 		cs.InterceptCount = len(raw.UserDaemon.Intercepts)
 	}
 	return cs
